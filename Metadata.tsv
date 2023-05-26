@@ -1,0 +1,54 @@
+Contents	"Stream nutrient concentrations (2004-2018), Little River Experimental Watershed, Tifton, Georgia"										
+Version	"1.00, file created on 1/10/2023."										
+Contact	oliva.pisani@usda.gov										
+											
+Missing data	"Missing lab sample concentration values are denoted with a ""·""."										
+Notes	Concentration values greater than zero and below the method detection limit (MDL) are included in this file. The annual MDLs are summarized below.										
+	"NH4N, NO3N, PO4P, Cl, TDN, TDP, DOC, and K were filtered unless otherwise noted in remarks."										
+	TKN and TP were unfiltered unless noted in remarks.										
+											
+FIELD NAME	DESCRIPTION										
+Station	"Sampling station, site"										
+Date	"Sample collection date, MM/DD/YYYY"										
+Time	"Sample collection time, Eastern Standard Time"										
+Remarks	Includes any comments regarding sample collection and processing that may impact water quality results.										
+	"""full"" denotes a full autosampler jar."										
+	"""no liner"" denotes a missing sample bag in the autosampler."										
+	"""no rinse"" denotes not enough sample to pre-rinse glassware prior to sample filtration."										
+	"""frozen"" denotes the sample was frozen inside the autosampler."										
+	"""pump error"" denotes the pump stopped working due to power failure or other."										
+	"""nes"" denotes not enough sample was collected."										
+Type	Type of sample collected.										
+	"AFCR denotes automated flow composite sample, refrigerated in field."										
+	GRAB denotes a manual grab sample.										
+	AUTOGRAB denotes a grab sample taken using the autosampler pump and tubing.										
+	"ATCR denotes automated time composite sample, refrigerated in field."										
+NH4N	"Ammonia plus ammonium concentration (water, dissolved), mg/L"										
+NO3N	"Nitrate plus nitrite concentration (water, dissolved), mg/L"										
+PO4P	"Ortho-phosphate concentration (water, dissolved), mg/L"										
+Cl	"Chloride concentration (water, dissolved), mg/L"										
+TKN	"Total Kjeldahl nitrogen concentration (water, unfiltered), mg/L"										
+TP	"Total phosphorus concentration (water, unfiltered), mg/L"										
+TDN	"Total dissolved nitrogen concentration (water, filtered), mg/L"										
+TDP	"Total dissolved phosphorus concentration (water, filtered), mg/L"										
+DOC	"Dissolved organic carbon concentration (water, filtered), mg/L"										
+K	"Potassium concentration (water, dissolved), mg/L"										
+TSS	"Total suspended solids concentration, mg/L"										
+											
+Method detection limits										
+YEAR	NH4N	NO3N	PO4P	Cl	TKN	TP	TDN	TDP	DOC	K
+2004	0.0563	0.117	0.0347	0.0567	0.0769	0.109	·	·	1.55	1.7
+2005	0.0307	0.154	0.0715	0.523	0.0769	0.109	·	·	1.66	1.7
+2006	0.0525	0.0825	0.0164	0.427	1.62	1.09	·	·	1.07	·
+2007	0.0440	0.0901	0.0287	2.62	0.466	0.196	·	·	1.66	·
+2008	0.0953	0.0570	0.174	0.448	0.244	0.086	·	·	1.28	0.27
+2009	0.0235	0.0436	0.0079	1.22	0.0736	0.0373	·	·	1.10	0.32
+2010	0.0195	0.0667	0.0057	1.16	0.502	0.244	·	·	0.692	0.32
+2011	0.0276	0.0351	0.0101	0.532	·	·	0.0273	0.0103	·	0.39
+2012	0.0308	0.0513	0.0093	0.644	·	·	0.119	0.0115	·	0.25
+2013	0.0110	0.0221	0.0205	0.714	·	·	0.0159	0.0096	·	·
+2014	0.0357	0.0599	0.0307	0.674	·	·	0.0719	0.0119	·	·
+2015	0.0169	0.0722	0.0113	0.309	·	·	·	·		·
+2016	0.0332	0.0281	0.0072	0.328	·	·	0.0640	·	0.558	·
+2017	0.0127	0.00740	0.005	0.25	·	·	0.0502	·	0.285	·
+2018	0.0290	0.006	0.007	0.16	·	·	0.130	·	0.867	·

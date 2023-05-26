@@ -1,0 +1,864 @@
+---
+title: "ICRW8 Workshop: Integrating USDA-ARS and NEON Water Quality Data for Southeast Rivers"
+description: "Tutorial for downloading NEON data and USDA ARS data, and then exploring and understanding the downloaded data"
+dateCreated: 2023-05-08
+authors: Bobby Hensley, Jim Coloso
+contributors: 
+estimatedTime: 120 minutes
+packagesLibraries: neonUtilities, plotly, lubridate
+output: 
+  html_document:
+    toc: true
+    toc_float: true
+    toc_depth: 4
+---
+```{css toc-content, echo = FALSE}
+/*set set margins so that TOC all the way to the left*/
+#TOC {
+  /*right: 270px;*/
+  margin: 20px 0px 25px 0px;
+}
+.main-container {
+    margin-left: 20px;
+}
+body .main-container{
+    max-width: 90vw;
+}
+```
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(eval = T, echo = T, message = F, warning = F, error = F)
+```
+
+This tutorial covers downloading NEON Aquatic Instrument System (AIS)
+and Aquatic Observation System (AOS) data from the Flint River site
+(FLNT) as well as Little River data from the USDA-ARS program. This also
+covers data analysis, plotting, and a comparison of water quality
+parameters at the two sites.
+
+::: {#ds-objectives markdown="1"}
+## Objectives
+
+After completing this activity, you will be able to:
+
+-   Download NEON AIS and AOS data using the `neonUtilities` package.
+-   Understand downloaded data sets and load them into R for analyses.
+-   Merge instrumented an observational data sets for plotting and
+    comparison.
+-   Create concentration-discharge plots    
+
+## Things You'll Need To Complete This Tutorial
+
+To complete this tutorial you will need R (version \>=4.2) and,
+preferably, RStudio loaded on your computer.
+
+### Install R Packages
+
+-   **neonUtilities**: Basic functions for accessing NEON data
+-   **plotly**: Plotting functions
+-   **lubridate**: Functions for handling dates and times
+
+These packages are on CRAN and can be installed by `install.packages()`.
+
+### Additional Resources
+
+-   <a href="https://github.com/NEONScience/NEON-Utilities/neonUtilities" target="_blank">GitHub
+    repository for neonUtilities</a>
+:::
+
+## NEON Flint River Data 
+
+### Download and Load Directly to R
+
+The most popular function in `neonUtilities` is `loadByProduct()`. This
+function downloads data from the NEON API, merges the site-by-month
+files, and loads the resulting data tables into the R environment,
+assigning each data type to the appropriate R class. This is a popular
+choice because it ensures you're always working with the most up-to-date
+data, and it ends with ready-to-use tables in R. However, if you use it
+in a workflow you run repeatedly, keep in mind it will re-download the
+data every time.
+
+Before we get the NEON data, we need to install (if not already done)
+and load the neonUtilities R package, as well as other packages we will
+use in the analysis.
+
+```{r set-up-env, eval=FALSE}
+# Install neonUtilities package if you have not yet.
+install.packages('neonUtilities')
+install.packages('plotly')
+install.packages('luridate')
+```
+
+```{r load-packages}
+# Load required packages
+library(neonUtilities)
+library(plotly)
+library(lubridate)
+```
+
+The inputs to `loadByProduct()` control which data to download and how
+to manage the processing. The following are frequently used inputs:
+
+-   `dpID`: the data product ID, e.g. DP1.20288.001. It is the data product identifier of the data you want to
+    download. It will be in the form DP#.#####.###. For this tutorial, we'll use some data products collected
+    in NEON's Aquatic Instrument and Observational Systems: DP1.20033.001 - SUNA nitrate sensor data, DP1.20093.001 - Chemical
+    properties of surface water, DP1.20288.001 - Water quality sensor data, and DP4.00130.001 - Continuous discharge.
+
+-   `site`: defaults to "all", meaning all sites with available data; To
+    download data from a specific site, use the 4-letter NEON site code.
+    The site code for the Flint River is FLNT.
+
+-   `startdate` and `enddate`: defaults to NA, meaning all dates with
+    available data; or a date in the form YYYY-MM, e.g. 2022-06. Since
+    NEON data are provided in month packages, finer scale querying is
+    not available. Both start and end date are inclusive.
+
+-   `package`: either basic or expanded data package. Expanded data
+    packages generally include additional information about data
+    quality, such as individual quality flag test results. Not every
+    NEON data product has an expanded package; if the expanded package
+    is requested but there isn't one, the basic package will be
+    downloaded.
+
+-   `check.size`: TRUE or FALSE; should the function pause before
+    downloading data and warn you about the size of your download?
+    Defaults to TRUE; if you are using this function within a script or
+    batch process you will want to set this to FALSE. For large or
+    unknown downloads, you may want to check the size first.
+
+-   `token`: this allows you to input your NEON API token to obtain
+    faster downloads. This is is optional and will not be used below for
+    simplicity.
+
+Learn more about NEON API tokens in the
+<a href="https//:www.neonscience.org/neon-api-tokens-tutorial" target="_blank">**Using
+an API Token when Accessing NEON Data with neonUtilities** tutorial</a>.
+
+There are additional inputs you can learn about in the
+<a href="https//:www.neonscience.org/neonDataStackR" target="_blank">**Use
+the neonUtilities R Package to Access NEON Data** tutorial</a>.
+
+Now let us download our data. In this exercise, we want data from only one NEON field site, Flint
+River (FLNT) from 2018. If you are using a NEON token to download
+your data, paste it in the line below and uncomment.
+
+```{r download-data-nsw, results='hide', cache=TRUE}
+# Download SUNA nitrate sensor data
+nsw <- neonUtilities::loadByProduct(dpID = "DP1.20033.001",
+                                    site = "FLNT",
+                                    startdate = "2018-01",
+                                    enddate = "2018-12",
+                                    package = "expanded",
+                                    # token = 'paste your token here',
+                                    check.size = F
+                                    )
+```
+
+Using what you've learned above, can you modify the code to download
+data for: DP1.20288.001 - Water quality sensor data, DP4.00130.001 Continuous discharge, and  DP1.20093.001 - Chemical
+properties of surface water
+
+```{r download-data-others, results='hide', cache=TRUE}
+# Download water quality sensor data
+waq <- neonUtilities::loadByProduct(dpID = "DP1.20288.001",
+                                     site = "FLNT",
+                                     startdate = "2018-01",
+                                     enddate = "2018-12",
+                                     package = "expanded",
+                                     check.size = F)
+
+# Download continuous discharge data 
+csd <- neonUtilities::loadByProduct(dpID = "DP4.00130.001",
+                                    site = "FLNT",
+                                    startdate = "2018-01",
+                                    enddate = "2018-12",
+                                    package = "basic", #try "expanded" to get additional data
+                                    check.size = F)
+
+# Download water chemistry data
+swc <- neonUtilities::loadByProduct(dpID = "DP1.20093.001",
+                                    site = "FLNT",
+                                    startdate = "2018-01",
+                                    enddate = "2018-12",
+                                    package = "expanded",
+                                    check.size = F)
+```
+
+#### Files Associated with Downloads
+
+The data we've downloaded comes as an object that is a named list of
+objects. We can use the `names()` function to view the components of each list.
+You can see that there are 8 objects: 1 dataframe of data (`NSW_15_minute`) and
+6 metadata files. We can then use the `$` operator to select a specific object from the list. 
+
+```{r loadBy-list nsw}
+# view all components of the list
+names(nsw)
+
+# View the dataFrame
+View(nsw$NSW_15_minute)
+```
+
+Now let's view the objects in the other lists.
+
+```{r loadBy-list all}
+names(waq)
+names(csd)
+names(swc)
+```
+
+If you'd like, you can use the `$` operator to assign an object from an
+item in the list. If you prefer to extract each table from the list and
+work with it as independent objects, which we will do, you can use the
+`list2env()` function.
+
+```{r unlist-vars,results='hide'}
+# Unlist the variables and add to the global environment
+list2env(nsw, .GlobalEnv)
+list2env(waq, .GlobalEnv)
+list2env(csd, .GlobalEnv)
+list2env(swc, .GlobalEnv)
+```
+
+So what exactly are these files and why would you want to use them?
+
+-   **data file(s)**: There will always be one or more dataframes that
+    include the primary data of the data product you downloaded.
+    Multiple dataframes are available when there are related datatables
+    for a single data product.
+-   **readme_xxxxx**: The readme file, with the corresponding 5 digits
+    from the data product number, provides you with important
+    information relevant to the data product.
+-   **sensor_postions_xxxxx**: this file contains information about the
+    coordinates of each sensor, relative to a reference location.
+-   **variables_xxxxx**: this file contains all the variables found in
+    the associated data table(s). This includes full definitions, units,
+    and other important information.
+-   **issueLog_xxxxx**: this file contains information about issues
+    identified for the particular data product.
+
+There are also two files specific to water quality:
+
+-   **ais_maintenance**: this file contains information about field
+    maintenance, for example when cleanings and calibrations were
+    performed.
+-   **ais_multisondeCleanCal**: this file contains information from the
+    cleanings and claibrations, for example what the sensor was reading
+    in standards before and after. This can be useful in performing
+    drift correction or adjusting calibration offsets.
+
+The water chemistry data also contains:
+
+-   **validation_xxxxx**: this file provides descriptions of data validation.
+
+#### A note about sensor positions
+
+NEON often collects the same type of data from sensors in different
+locations. These data are delivered together but you will frequently
+want to plot the data separately or only include data from one sensor in
+your analysis. NEON uses the `horizontalPosition` variable in the data
+tables to describe which sensor data is collected from. The
+`horizontalPosition` is always a three digit number for AIS data.
+Examples as of 2022 at AIS sites include:
+
+-   101: stream sensors located at the **upstream** station on a
+    **monopod mount**,
+-   111: stream sensors located at the **upstream** station on an
+    **overhead cable mount**,
+-   131: stream sensors located at the **upstream** station on a **stand
+    alone pressure transducer mount**,
+-   102: stream sensors located at the **downstream** station on a
+    monopod mount,
+-   112: stream sensors located at the **downstream** station on an
+    **overhead cable mount**
+-   132: stream sensors located at the **downstream** station on a
+    **stand alone pressure transducer mount**,
+-   110: **pressure transducers** mounted to a **staff gauge**.
+-   103: sensors mounted on **buoys in lakes or rivers**
+-   130 and 140: sensors mounted in the **littoral zone** of lakes
+
+The Flint River data in this exercise is collected from a single buoy so
+it all has the same `horizontalPosition` of 103. `horizontalPosition` is
+much more important when looking at stream or groundwater data where
+there are multiple locations.
+
+### Compare nitrate sensor data to nitrate from grab samples
+
+#### Examine and prep nitrate sensor data
+
+First, let's identify the column names important for our analysis - time
+and nitrate data. There are several ways of doing this:
+
+```{r column-names}
+# One option is to view column names in the data frame
+names(NSW_15_minute)
+
+# Alternatively, view the variables object corresponding to the data product for more information
+View(variables_20033)
+```
+
+The time column we'll consider for instrumented systems is `endDateTime`
+because it approximately represents data within the interval on or
+before the `endDateTime` time stamp. Timestamp column choice matters for
+time-aggregated datasets, but should not matter for instantaneous data
+such as water quality. When interpreting data, keep in mind NEON
+timestamps are always in UTC.
+
+The data column we would like to plot is labeled `surfWaterNitrateMean`.
+
+First, we need to remove any quality flags in the nitrate data. There
+are many different quality flags in NEON sensor data, but they are
+summarized in the finalQF column where 0 has no flag and 1 has a flag.
+We will remove any `finalQF` flags where the value is not 0.
+
+```{r nsw remove flags}
+# Remove flagged data
+NSW_15_minute <- NSW_15_minute[NSW_15_minute$finalQF == 0,]
+```
+
+
+Now let's create a plot. We're using the `plotly` package as it allows
+for interactive data exploration. We can also add in the uncertainty
+values. In the plot below, you can use the tools in the upper right-hand
+corner to zoom, pan, etc. You can turn traces on/off by clicking on them
+in the legend. You can also see information about the data by hovering the 
+cursor over the plot.
+
+```{r plot nsw}
+plot_ly(data = NSW_15_minute, 
+        x = ~endDateTime,
+        y = ~surfWaterNitrateMean,
+        name = "SUNA",
+        type = "scatter",
+        mode = "lines") %>%
+  add_ribbons(data = NSW_15_minute, 
+              x = ~endDateTime,
+              ymin = ~(surfWaterNitrateMean - surfWaterNitrateExpUncert), 
+              ymax = ~(surfWaterNitrateMean + surfWaterNitrateExpUncert),
+              name = "Uncertainty"
+              ) %>%
+  layout(title = 'SUNA Nitrate with Uncertainty',
+         xaxis = list(title = "Date"),
+         yaxis = list(title = "Nitrate (micromoles/L)")
+         )
+
+```
+
+Next, we will need to convert nitrate from µM to nitrogen mg/L so we can
+compare with grab samples.
+
+```{r nsw convert N}
+# Convert to mg/L
+NSW_15_minute$nitrate_mgL = NSW_15_minute$surfWaterNitrateMean*14/1000
+```
+
+
+Now let's get the grab sample nitrate data ready for comparison. We need
+to pull out the nitrate data and match it up with the SUNA data.
+
+```{r swc nitrate}
+# Get nitrate (NO3+NO2 - N)
+swc_nitrate<-swc_externalLabDataByAnalyte[swc_externalLabDataByAnalyte$analyte=="NO3+NO2 - N",]
+
+# Average by date (some replicates)
+swc_nitrate <- setNames(aggregate(swc_nitrate$analyteConcentration, 
+                                  by = list(swc_nitrate$collectDate), 
+                                  FUN = mean), 
+                        c('collectDate','analyteConcentration'))
+
+# Round date to nearest 15 min to match SUNA
+swc_nitrate$roundedDate<-lubridate::round_date(swc_nitrate$collectDate,unit="15 minute")
+
+
+```
+
+We can now plot SUNA nitrate with grab sample nitrate
+
+```{r suna swc plot}
+# Create plot of SUNA and grab sample time-series
+plot_ly(data = NSW_15_minute, 
+        x = ~endDateTime,
+        y = ~nitrate_mgL,
+        name = "SUNA",
+        type = "scatter",
+        mode = "lines") %>%
+  add_trace(data = swc_nitrate, 
+            x = ~collectDate,
+            y = ~analyteConcentration,
+            name="Grab Sample",
+            type="scatter",
+            mode="markers") %>%
+  layout(title = 'SUNA Nitrate with Grab Samples',
+         xaxis = list(title = "Date"),
+         yaxis = list(title = "NO2+NO3-N (mg/L)"))
+         
+
+```
+
+The two data sets seem to correspond fairly well. Let's merge the data 
+and run a regression to compare them.
+
+```{r nitrate reg}
+# Merge with SUNA with grab samples
+mergedData<-merge(swc_nitrate,
+                  NSW_15_minute,
+                  by.x="roundedDate",
+                  by.y = 'endDateTime',
+                  all = TRUE
+                 )
+# Create regression of SUNA vs grab samples and fits linear model
+sunaGrabReg<-na.omit(mergedData[,c("analyteConcentration","nitrate_mgL")]) #only matching pairs
+fit<-lm(nitrate_mgL ~ analyteConcentration, data = sunaGrabReg)
+plot_ly(data = sunaGrabReg, 
+        x = ~analyteConcentration,
+        y = ~nitrate_mgL,
+        name = "data",
+        type = "scatter",
+        mode = "markers")%>%
+  add_trace(data=sunaGrabReg,
+            x = ~analyteConcentration,
+            y = fitted(fit),
+            name = "regression",
+            mode = "lines")%>%
+  layout(title = 'SUNA vs Grab Samples',
+         xaxis = list(title = "grab NO2+NO3-N (mg/L)"),
+         yaxis = list(title = "SUNA NO2+NO3-N (mg/L)")
+         )
+summary(fit)
+```
+
+### Compare fDOM sensor data to DOC from grab samples
+
+Now, let's follow the same steps to compare DOC from grab samples with
+in-situ fDOM measurements.
+
+```{r doc fdom}
+# Get fDOM from water quality sensor data and remove flags
+fdom <- waq_instantaneous[waq_instantaneous$fDOMFinalQF == 0,]
+fdom <- fdom[,c("endDateTime", "fDOM", "rawCalibratedfDOM")]
+
+# Get DOC from water chemistry data
+swc_doc <- swc_externalLabDataByAnalyte[swc_externalLabDataByAnalyte$analyte == "DOC",]
+
+# Average by date (some replicates)
+swc_doc <- setNames(aggregate(swc_doc$analyteConcentration, 
+                              by = list(swc_doc$collectDate), 
+                              FUN = mean), 
+                    c('collectDate','analyteConcentration'))
+
+
+# Plot fDOM and grab samples
+## Create a second Y-axis to make plot easier to read
+y2 <- list(
+  overlaying = 'y',
+  side =  'right',
+  title = 'DOC mg/L'
+)
+
+## Plot fDOM with DOC
+plot_ly(data = fdom, 
+        x = ~endDateTime,
+        y = ~fDOM,
+        name="meanfDOM",
+        type = "scatter",
+        mode = "lines") %>%
+  add_trace(data = swc_doc, 
+            x = ~collectDate,
+            y = ~analyteConcentration,
+            name = "grabSample",
+            type = "scatter",
+            mode = "markers",
+            yaxis = 'y2') %>%
+  layout(title = 'fDOM and DOC',
+         yaxis2 = y2,
+         xaxis = list(title = "Date"),
+         yaxis = list(title = "fDOM")
+  )
+
+# Merge data in order to run regression
+## fDOM measured every 1 minute, but lots of flags so not all minutes present - calculate 5 minute averages
+fdom$roundedDate <- lubridate::round_date(fdom$endDateTime, unit = '5 minute')
+fdom <- setNames(aggregate(fdom$fDOM, 
+                           by = list(fdom$roundedDate), 
+                           FUN = mean), 
+                 c('roundedDate', 'meanfDOM'))
+
+## Round date to nearest 5 min to match fDOM
+swc_doc$roundedDate<-lubridate::round_date(swc_doc$collectDate,unit = "5 minute")
+
+
+## Merge fDOM with DOC data
+mergedData.doc<-merge(swc_doc,
+                      fdom,
+                      by = "roundedDate",
+                      all.x = TRUE
+                      )
+
+
+# Plot DOC vs fdom and run regression
+docfDOMReg <- na.omit(mergedData.doc[,c('analyteConcentration', 'meanfDOM')])
+fit.doc.fdom <- lm(analyteConcentration ~ meanfDOM, data = docfDOMReg)
+plot_ly(data = docfDOMReg, 
+        x = ~meanfDOM,
+        y = ~analyteConcentration,
+        name = "data",
+        type = "scatter",
+        mode = "markers")%>%
+  add_trace(data = docfDOMReg, 
+            x = ~meanfDOM,
+            y = ~predict(fit.doc.fdom),
+            name = "regression",
+            type = "scatter",
+            mode = "lines") %>%
+    layout(title = 'fDOM vs DOC',
+           xaxis = list(title = "DOC (mg/L)"),
+           yaxis = list(title = "mean fDOM")
+    )
+
+```
+
+## USDA-ARS Data - Little River
+
+### Loading Data
+Now let's start loading in the USDA-ARS Little River data that we downloaded earlier in the workshop. The files need to be in
+your working directory. If you haven't already set this, you can do that with `setwd('path to directory')` in your script or console.
+You can also set it by using the Files tab in RStudio. Browse to the directory you wish to use and then click the gear icon and 
+click `Set As Working Directory`.
+
+```{r lr data, echo = -1}
+options(width = 100) #makes output wider in HTML
+# Water chemistry data
+lr.meta <- read.table('Metadata.tsv', 
+                      header = TRUE, 
+                      sep = '\t', 
+                      fill = TRUE)
+lr.all <- read.table('2078-B.txt', 
+                 header = TRUE, 
+                 sep = '\t')
+head(lr.all)
+
+```
+
+You'll notice that the data contains a strange character (`·`) where
+data is missing. We need to convert that to NA. We can copy it from the
+data and use it as the `na.strings` value in `read.table`. There are a
+varying number of spaces around that character so we'll also need to use
+`strip.white` to remove the spaces.
+
+```{r lr load data na}
+lr.all <- read.table('2078-B.txt', 
+                     header = TRUE, 
+                     sep = '\t', 
+                     strip.white = TRUE, 
+                     na.strings = '·')
+head(lr.all)
+
+```
+
+Now that we've figured that out, we can load in the discharge data.
+
+```{r lr load meta q}
+# Discharge data - just station B (6840), 2018
+lr.q <- read.table('lrew_streamflow_daily.txt', 
+                   header = TRUE, 
+                   sep = ',', 
+                   skip = 33, #contains lots of header rows, need to skip those
+                   fill = TRUE)
+
+```
+
+### Process Data
+The Litter River data includes data for many years and stations. Let's get just 2018 and station B (6840)
+
+```{r lr select}
+# Get columns of interest
+lr <- lr.all[,c("STATION", "DATE", "TIME", "NO3N", "DOC")]
+
+# Create proper date
+lr$DATE <- as.Date(lr$DATE, format = '%m/%d/%Y')
+
+# Only use 2018
+lr <- lr[format(lr$DATE, '%Y') == '2018',]
+
+# Discharge data - just station B (6840), 2018
+lr.q <- lr.q[lr.q$ID == 6840,]
+lr.q <- lr.q[lr.q$Year == 2018,]
+```
+
+There are a few last things we need to fix in the discharge data before we can use it. We need to change
+the discharge date to a proper date format. Then we need to convert the discharge units to L/s to match NEON data.
+
+```{r q units}
+# Create date
+lr.q$date <- as.Date(paste(lr.q$Year, lr.q$Month, lr.q$Day, sep = '-'))
+
+# Convert Q cf/s to L/s to match NEON
+lr.q$AvgDQlps <- lr.q$AvgDQ * 28.3168
+```
+
+### Plot Data
+Now we're ready to start plotting.
+```{r lr merge-plot}
+# Plot nitrate, DOC over time. 
+## We're saving the figure as a variable here so we can use it again below
+fig <- plot_ly(data = lr, 
+               x = ~DATE, 
+               y = ~NO3N, 
+               name = 'NO2+NO3-N', 
+               type = 'scatter', 
+               mode = 'lines+markers') %>%
+          add_trace(x = ~DATE, 
+                    y = ~DOC, 
+                    name = 'DOC', 
+                    type = 'scatter', 
+                    mode = 'lines+markers') %>%
+          layout(title = 'Little River: Nitrate and DOC',
+                 xaxis = list(title = 'Date'),
+                 yaxis = list(title = 'Concentration (mg/L)'))
+fig #shows figure
+
+# Plot all discharge
+plot_ly(data = lr.q, 
+        x = ~date, 
+        y = ~AvgDQlps, 
+        type = 'scatter', 
+        mode = 'lines+markers') %>%
+  layout(title = 'Little River: Discharge',
+         xaxis = list(title = 'Date'),
+         yaxis = list(title = 'Discharge (L/s)'))
+
+# Plot all together
+## need to make second y axis for discharge
+y2 <- list(
+  overlaying = 'y',
+  side =  'right',
+  title = 'Discharge (L/s)'
+)
+
+# Add discharge to fig from above
+fig2 <- fig %>% 
+  add_trace(data = lr.q, 
+            x = ~date,
+            y = ~AvgDQlps, 
+            name = 'Discharge', 
+            type = 'scatter', 
+            mode = 'lines+markers', 
+            yaxis = 'y2') %>%
+  layout(title = 'Little River: Nitrate, DOC, Discharge',
+         yaxis2 = y2)
+fig2
+
+```
+
+## Comparison of Flint River and Little River
+Let's plot FLNT and Little River data together
+```{r plot both}
+# Let's get daily averages of FLNT discharge so it matches Little River and so there isn't so much data to plot.
+## First, we need to remove the time from endDate. We'll use floor_date from lubridate
+csd_continuousDischarge$daily <- lubridate::floor_date(csd_continuousDischarge$endDate, unit = 'day')
+## Next we will average by date
+csd_daily <- setNames(aggregate(csd_continuousDischarge$maxpostDischarge, 
+                                by = list(csd_continuousDischarge$daily), 
+                                FUN = mean, 
+                                na.rm = TRUE),
+                      c('date','dailyQ'))
+
+# Plot Discharge - multiply LR Q by 10 for easier comparison
+plot_ly(data = csd_daily,
+        x = ~date,
+        y = ~dailyQ,
+        type = 'scatter',
+        mode = 'lines',
+        name = 'FLNT') %>%
+  add_trace(data = lr.q,
+            x = ~date,
+            y = ~AvgDQlps*10, #10x
+            type = 'scatter',
+            mode = 'lines',
+            name = 'LR x 10') %>%
+  layout(title = 'Discharge in both Rivers',
+         xaxis = list(title = 'Date'),
+         yaxis = list(title = 'Discharge (L/s)')
+        )
+
+
+# We've already processed the NEON water chem data as swc_nitrate and swc_doc. Let's just combine them together for plotting
+swc_no3_doc <- cbind(swc_nitrate, swc_doc$analyteConcentration)
+names(swc_no3_doc) <- c('collectDate','nitrate','roundedDate','DOC')
+
+# Plot FLNT and LR Nitrate
+plot_ly(data = swc_no3_doc, 
+        x = ~collectDate, 
+        y = ~nitrate, 
+        type = 'scatter', 
+        mode = 'lines+markers', 
+        name = 'FLNT') %>%
+  add_trace(data = lr, 
+            x = ~DATE, 
+            y = ~NO3N, 
+            type = 'scatter', 
+            mode = 'lines+markers', 
+            name = 'LR') %>%
+  layout(title = 'Nitrate in both Rivers',
+         xaxis = list(title = 'Date'),
+         yaxis = list(title = 'NO2+NO3-N (mg/L)'))
+
+# Plot FLNT and LR DOC
+plot_ly(data = swc_no3_doc, 
+        x = ~collectDate, 
+        y = ~DOC, 
+        type = 'scatter', 
+        mode = 'lines+markers', 
+        name = 'FLNT') %>%
+  add_trace(data = lr, 
+            x = ~DATE, 
+            y = ~DOC, 
+            type = 'scatter', 
+            mode = 'lines+markers', 
+            name = 'LR') %>%
+  layout(title = 'DOC in both Rivers',
+         xaxis = list(title = 'Date'),
+         yaxis = list(title = 'DOC (mg/L)'))
+
+```
+
+## Concentration-Discharge Plots For Both Sites
+Finally, let's make C-Q plots for nitrate and DOC for both rivers. 
+```{r qc plots}
+# FLNT:
+## Merge grab samples and discharge
+mergedData.neon <- merge(csd_continuousDischarge,
+                         swc_no3_doc,
+                         by.x = "endDate",
+                         by.y = "collectDate",
+                         all.x = TRUE,
+                         all.y = TRUE)
+
+## Create regression of nitrate grab samples versus discharge and fit power function
+concDisReg <- na.omit(mergedData.neon[,c('nitrate', 'DOC', 'maxpostDischarge')])
+concDisReg <- concDisReg[order(concDisReg$maxpostDischarge),]
+fit <- lm(log(nitrate) ~ log(maxpostDischarge), data=concDisReg)
+plot_ly(data = concDisReg, 
+        x = ~maxpostDischarge, 
+        y = ~nitrate, 
+        type = 'scatter',
+        mode = 'markers', 
+        name = 'data') %>%
+  add_trace(data = concDisReg, 
+            x = ~maxpostDischarge, 
+            y = exp(predict(fit)),
+            type = 'scatter',
+            mode = 'lines', 
+            name = 'regression') %>%
+  layout(title = 'Flint River: Nitrate vs Q',
+         xaxis = list(title = 'Q (L/s)'),
+         yaxis = list(title = 'NO2+NO3-N (mg/L)'))
+
+## Plot DOC vs Q
+fit.doc <- lm(log(DOC) ~ log(maxpostDischarge), data = concDisReg)
+
+plot_ly(data = concDisReg, 
+        x = ~maxpostDischarge, 
+        y = ~DOC, 
+        type='scatter',
+        mode = 'markers', 
+        name = 'data') %>%
+  add_trace(data = concDisReg, 
+            x = ~maxpostDischarge, 
+            y = exp(predict(fit.doc)),
+            type = 'scatter',
+            mode = 'lines',
+            name = 'regression') %>%
+  layout(title = 'Flint River: DOC vs Q',
+         xaxis = list(title = 'Q (L/s)'),
+         yaxis = list(title = 'DOC (mg/L)'))
+
+# Little River:
+## Merge discharge data and grab samples
+merge.lr <- merge(lr, 
+                  lr.q, 
+                  by.x = 'DATE', 
+                  by.y = 'date')
+
+merge.lr <- merge.lr[order(merge.lr$AvgDQlps),]
+
+## Plot nitrate vs Q
+fit.lr.no3.q <- lm(log(NO3N) ~ log(AvgDQlps), data = merge.lr)
+
+plot_ly(data = merge.lr, 
+        x = ~AvgDQlps, 
+        y = ~NO3N, 
+        type = 'scatter', 
+        mode = 'markers',
+        name = 'data') %>%
+  add_trace(data = merge.lr, 
+            x = ~AvgDQlps, 
+            y = exp(predict(fit.lr.no3.q)), 
+            mode = 'lines',
+            name = 'regression') %>%
+  layout(title = 'Little River: Nitrate vs Q',
+         xaxis = list(title = 'Q (L/s)'),
+         yaxis = list(title = 'NO2+NO3-N (mg/L)'))
+
+
+## Plot DOC vs Q
+fit.lr.doc.q <- lm(log(DOC) ~ log(AvgDQlps), data = merge.lr)
+
+plot_ly(data = merge.lr, 
+        x = ~AvgDQlps, 
+        y = ~DOC, 
+        type = 'scatter', 
+        mode = 'markers',
+        name = 'data') %>%
+  add_trace(data = merge.lr, 
+            x = ~AvgDQlps, 
+            y = exp(predict(fit.lr.doc.q)), 
+            mode = 'lines',
+            name = 'regression') %>%
+    layout(title = 'Little River: DOC vs Q',
+           xaxis = list(title = 'Q (L/s)'),
+           yaxis = list(title = 'DOC (mg/L)'))
+
+```
+
+## Bonus - Get USGS data from R
+You can use the `dataRetrieval` packages from the USGS to get access to [USGS Water Data](https://waterdata.usgs.gov). You'll need to know the site number and parameter code for the data you want to download. Below we pull in-situ nitrate and discharge data from the Santa Fe River in Florida. Then we merge it and plot the C-Q relationship.
+```{r usgs, cache=TRUE}
+# Load USGS dataRetrieval package. For more information visit: https://waterdata.usgs.gov/blog/dataretrieval/
+
+#install.packages('dataRetrieval')
+library(dataRetrieval)
+
+# Pull discharge data (parameterCd=00060) and nitrate sensor data (parameterCd="99133")
+# from the Santa Fe River (siteNumber=02322800). 
+# note: the readNWISdv function returns daily values (dv). YYou could also use readNWISuv for instantaneous values
+
+# Get daily values (dv) of discharge.
+usgsDischarge<-dataRetrieval::readNWISdv(siteNumber="02322800", 
+                                         parameterCd="00060", 
+                                         startDate="2012-09-27",
+                                         endDate="2016-09-30")
+
+# Get daily values of nitrate sensor data 
+usgsNitrate<-dataRetrieval::readNWISdv(siteNumber="02322800", 
+                                       parameterCd="99133", 
+                                       startDate="2012-09-27",
+                                       endDate="2016-09-30")
+
+# Merge data tables using dateTime column
+usgsNitrate<-usgsNitrate[,c("Date","X_99133_00003","X_99133_00003_cd")]
+usgsMerged<-merge(usgsDischarge,
+                  usgsNitrate,
+                  by = "Date")
+
+# Plot C-Q relationship
+plot_ly(data = usgsMerged, 
+        x = ~X_00060_00003, 
+        y = ~X_99133_00003, 
+        type = 'scatter',
+        mode = 'markers', 
+        name = 'data') %>%
+  layout(title = 'USGS: Santa Fe River In-site Nitrate vs Q',
+         xaxis = list(title = 'Q (cfs)'),
+         yaxis = list(title = 'NO2+NO3-N (mg/L)'))
+```
