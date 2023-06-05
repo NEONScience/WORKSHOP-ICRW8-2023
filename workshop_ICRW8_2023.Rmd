@@ -86,7 +86,7 @@ use in the analysis.
 # Install neonUtilities package if you have not yet.
 install.packages('neonUtilities')
 install.packages('plotly')
-install.packages('luridate')
+install.packages('lubridate')
 ```
 
 ```{r load-packages}
